@@ -1,4 +1,4 @@
- import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import Landing from "./pages/Landing";
 import Authentication from "./pages/Authentication";
@@ -38,9 +38,8 @@ const App = () => {
             }
           />
 
-          {/* Meeting Route */}
           <Route
-            path="/meeting/:roomId"
+            path="/:url"
             element={
               <WithAuth>
                 <VideoMeet />
