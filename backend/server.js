@@ -1,4 +1,4 @@
- import express from "express";
+import express from "express";
 import http from "http";
 import mongoose from "mongoose";
 import cors from "cors";
@@ -13,12 +13,12 @@ dotenv.config();
 const app = express();
 const server = http.createServer(app);
 
-// ✅ CORS (IMPORTANT)
+// ✅ CORS
 app.use(
   cors({
     origin: "https://doconnectfrontend.onrender.com",
     credentials: true,
-  })
+  }),
 );
 
 app.use(express.json());
@@ -36,7 +36,9 @@ mongoose
 // Socket.io
 connectToSocket(server);
 
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () =>
-  console.log(`🚀 Server running on port ${PORT}`)
-);
+// ✅ REQUIRED FOR RENDER
+const PORT = process.env.PORT || 10000;
+
+server.listen(PORT, "0.0.0.0", () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+});
