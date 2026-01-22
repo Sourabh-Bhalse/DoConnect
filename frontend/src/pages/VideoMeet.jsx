@@ -19,8 +19,9 @@ import StopScreenShareIcon from "@mui/icons-material/StopScreenShare";
 import CloseIcon from "@mui/icons-material/Close";
 
 import "../styles/VideoMeet.css";
+import server from "../environment"
 
-const SERVER_URL = "http://localhost:3000";
+const SERVER_URL = server.prod;
 const ICE_SERVERS = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
 
 const VideoMeet = () => {
