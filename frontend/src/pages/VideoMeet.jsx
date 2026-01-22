@@ -2,11 +2,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
 import io from "socket.io-client";
 import axios from "axios";
-import {
-  Button,
-  IconButton,
-  TextField,
-} from "@mui/material";
+import { Button, IconButton, TextField } from "@mui/material";
 
 import MicIcon from "@mui/icons-material/Mic";
 import MicOffIcon from "@mui/icons-material/MicOff";
@@ -19,7 +15,7 @@ import StopScreenShareIcon from "@mui/icons-material/StopScreenShare";
 import CloseIcon from "@mui/icons-material/Close";
 
 import "../styles/VideoMeet.css";
-import server from "../environment"
+import server from "../environment";
 
 const SERVER_URL = server.prod;
 const ICE_SERVERS = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
@@ -53,7 +49,10 @@ const VideoMeet = () => {
 
   // ========== MEDIA ==========
   const getUserMedia = async () => {
-    const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: true,
+      audio: true,
+    });
     localVideoRef.current.srcObject = stream;
     setLocalStream(stream);
     return stream;
@@ -63,18 +62,24 @@ const VideoMeet = () => {
   const createPeer = (userId, stream, userName) => {
     const peer = new RTCPeerConnection(ICE_SERVERS);
 
-    stream.getTracks().forEach(track => peer.addTrack(track, stream));
+    stream.getTracks().forEach((track) => peer.addTrack(track, stream));
 
     peer.ontrack = (e) => {
-      setRemoteStreams(prev => {
-        if (prev.find(p => p.id === userId)) return prev;
-        return [...prev, { id: userId, username:userName, stream: e.streams[0] }];
+      setRemoteStreams((prev) => {
+        if (prev.find((p) => p.id === userId)) return prev;
+        return [
+          ...prev,
+          { id: userId, username: userName, stream: e.streams[0] },
+        ];
       });
     };
 
     peer.onicecandidate = (e) => {
       if (e.candidate) {
-        socketRef.current.emit("signal", userId, { type: "ice", candidate: e.candidate });
+        socketRef.current.emit("signal", userId, {
+          type: "ice",
+          candidate: e.candidate,
+        });
       }
     };
 
@@ -93,7 +98,7 @@ const VideoMeet = () => {
     await axios.post(
       `${SERVER_URL}/api/meeting/save`,
       { meetingCode: roomId },
-      { headers: { Authorization: `Bearer ${token}` } }
+      { headers: { Authorization: `Bearer ${token}` } },
     );
 
     // Connect socket
@@ -101,7 +106,7 @@ const VideoMeet = () => {
     socketRef.current.emit("join-call", roomId, username);
 
     // When a new user joins
-    socketRef.current.on("user-joined", async (userId,userName) => {
+    socketRef.current.on("user-joined", async (userId, userName) => {
       if (userId === socketRef.current.id) return;
       const peer = createPeer(userId, stream, userName);
       const offer = await peer.createOffer();
@@ -111,13 +116,17 @@ const VideoMeet = () => {
 
     // When receiving signaling data
     socketRef.current.on("signal", async (fromId, data, fromName) => {
-      let peer = peersRef.current[fromId] || createPeer(fromId, stream, fromName);
+      let peer =
+        peersRef.current[fromId] || createPeer(fromId, stream, fromName);
 
       if (data.type === "offer") {
         await peer.setRemoteDescription(data.sdp);
         const answer = await peer.createAnswer();
         await peer.setLocalDescription(answer);
-        socketRef.current.emit("signal", fromId, { type: "answer", sdp: answer });
+        socketRef.current.emit("signal", fromId, {
+          type: "answer",
+          sdp: answer,
+        });
       }
 
       if (data.type === "answer") {
@@ -133,27 +142,28 @@ const VideoMeet = () => {
     socketRef.current.on("user-left", (id) => {
       peersRef.current[id]?.close();
       delete peersRef.current[id];
-      setRemoteStreams(prev => prev.filter(p => p.id !== id));
+      setRemoteStreams((prev) => prev.filter((p) => p.id !== id));
     });
 
     // Chat messages from others
     socketRef.current.on("chat-message", (msg, sender) => {
       if (sender === username) return; // ignore own messages
-      setMessages(prev => [...prev, { sender, msg }]);
+      setMessages((prev) => [...prev, { sender, msg }]);
     });
   };
 
   // ========== CHAT ==========
   const sendMessage = () => {
-    if (!chatMsg.trim()) return;
+    const message = chatMsg.trim();
+    if (!message) return;
 
-    // Add locally
-    setMessages(prev => [...prev, { sender: username, msg: chatMsg }]);
-
-    // Send to others
-    socketRef.current.emit("chat-message", chatMsg, username, roomId);
-
+    // 🔥 clear input FIRST
     setChatMsg("");
+
+    // then update chat
+    setMessages((prev) => [...prev, { sender: username, msg: message }]);
+
+    socketRef.current.emit("chat-message", message, username, roomId);
   };
 
   useEffect(() => {
@@ -163,11 +173,13 @@ const VideoMeet = () => {
   // ========== SCREEN SHARE ==========
   const toggleScreenShare = async () => {
     if (!screenSharing) {
-      const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+      const screenStream = await navigator.mediaDevices.getDisplayMedia({
+        video: true,
+      });
       const screenTrack = screenStream.getVideoTracks()[0];
 
-      Object.values(peersRef.current).forEach(peer => {
-        const sender = peer.getSenders().find(s => s.track?.kind === "video");
+      Object.values(peersRef.current).forEach((peer) => {
+        const sender = peer.getSenders().find((s) => s.track?.kind === "video");
         sender?.replaceTrack(screenTrack);
       });
 
@@ -181,12 +193,12 @@ const VideoMeet = () => {
 
   const stopScreenShare = () => {
     const cameraTrack = localStream.getVideoTracks()[0];
-    Object.values(peersRef.current).forEach(peer => {
-      const sender = peer.getSenders().find(s => s.track?.kind === "video");
+    Object.values(peersRef.current).forEach((peer) => {
+      const sender = peer.getSenders().find((s) => s.track?.kind === "video");
       sender?.replaceTrack(cameraTrack);
     });
     localVideoRef.current.srcObject = localStream;
-    screenStreamRef.current?.getTracks().forEach(t => t.stop());
+    screenStreamRef.current?.getTracks().forEach((t) => t.stop());
     setScreenSharing(false);
   };
 
@@ -194,17 +206,17 @@ const VideoMeet = () => {
   const toggleMic = () => {
     const track = localStream.getAudioTracks()[0];
     track.enabled = !micOn;
-    setMicOn(prev => !prev);
+    setMicOn((prev) => !prev);
   };
 
   const toggleCamera = () => {
     const track = localStream.getVideoTracks()[0];
     track.enabled = !camOn;
-    setCamOn(prev => !prev);
+    setCamOn((prev) => !prev);
   };
 
   const leaveCall = () => {
-    localStream?.getTracks().forEach(t => t.stop());
+    localStream?.getTracks().forEach((t) => t.stop());
     socketRef.current?.disconnect();
     navigate("/home");
   };
@@ -235,9 +247,12 @@ const VideoMeet = () => {
             <span className="username">{username}</span>
           </div>
 
-          {remoteStreams.map(user => (
+          {remoteStreams.map((user) => (
             <div key={user.id} className="video-card">
-              <video ref={ref => ref && (ref.srcObject = user.stream)} autoPlay />
+              <video
+                ref={(ref) => ref && (ref.srcObject = user.stream)}
+                autoPlay
+              />
               <span className="username">{user.username}</span>
             </div>
           ))}
@@ -254,7 +269,10 @@ const VideoMeet = () => {
 
             <div className="messages">
               {messages.map((m, i) => (
-                <div key={i} className={`message ${m.sender === username ? "me" : "other"}`}>
+                <div
+                  key={i}
+                  className={`message ${m.sender === username ? "me" : "other"}`}
+                >
                   <span className="sender">{m.sender}</span>
                   <p>{m.msg}</p>
                 </div>
@@ -265,9 +283,16 @@ const VideoMeet = () => {
             <div className="chat-input">
               <TextField
                 fullWidth
+                multiline
+                maxRows={4} // input expands up to 4 lines
                 value={chatMsg}
                 onChange={(e) => setChatMsg(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault(); // prevent new line
+                    sendMessage();
+                  }
+                }}
                 placeholder="Type a message..."
               />
               <Button onClick={sendMessage}>Send</Button>
@@ -277,11 +302,21 @@ const VideoMeet = () => {
       </div>
 
       <div className="controls">
-        <IconButton onClick={toggleMic}>{micOn ? <MicIcon /> : <MicOffIcon />}</IconButton>
-        <IconButton onClick={toggleCamera}>{camOn ? <VideocamIcon /> : <VideocamOffIcon />}</IconButton>
-        <IconButton onClick={toggleScreenShare}>{screenSharing ? <StopScreenShareIcon /> : <ScreenShareIcon />}</IconButton>
-        <IconButton onClick={() => setChatOpen(true)}><ChatIcon /></IconButton>
-        <IconButton onClick={leaveCall} className="end-call"><CallEndIcon /></IconButton>
+        <IconButton onClick={toggleMic}>
+          {micOn ? <MicIcon /> : <MicOffIcon />}
+        </IconButton>
+        <IconButton onClick={toggleCamera}>
+          {camOn ? <VideocamIcon /> : <VideocamOffIcon />}
+        </IconButton>
+        <IconButton onClick={toggleScreenShare}>
+          {screenSharing ? <StopScreenShareIcon /> : <ScreenShareIcon />}
+        </IconButton>
+        <IconButton onClick={() => setChatOpen(true)}>
+          <ChatIcon />
+        </IconButton>
+        <IconButton onClick={leaveCall} className="end-call">
+          <CallEndIcon />
+        </IconButton>
       </div>
     </div>
   );
