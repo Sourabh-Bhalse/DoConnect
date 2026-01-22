@@ -1,5 +1,5 @@
  const server = {
-  dev: "http://localhost:3000",
+  dev: "http://localhost:10000",
   prod: "https://doconnectbackend.onrender.com",
 };
 

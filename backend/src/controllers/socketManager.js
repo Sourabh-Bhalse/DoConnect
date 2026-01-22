@@ -4,13 +4,17 @@ import jwt from "jsonwebtoken";
 const connectToSocket = (server) => {
   const io = new Server(server, {
     cors: {
-      origin: "https://doconnectfrontend.onrender.com",
-      methods: ["GET", "POST"],
+      origin: [
+        "http://localhost:3000", // local frontend
+        "https://doconnectfrontend.onrender.com" // production frontend
+      ],
+      methods: ["GET", "POST"]
     },
   });
 
   const rooms = {};
 
+  // ✅ JWT authentication for socket
   io.use((socket, next) => {
     const token = socket.handshake.auth?.token;
     if (!token) return next(new Error("No token"));
@@ -47,6 +51,10 @@ const connectToSocket = (server) => {
 
       socket.on("disconnect", () => {
         rooms[roomId]?.delete(socket.id);
+
+        // ✅ Cleanup empty rooms
+        if (rooms[roomId]?.size === 0) delete rooms[roomId];
+
         socket.to(roomId).emit("user-left", socket.id);
       });
     });
