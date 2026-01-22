@@ -1,4 +1,4 @@
-import express from "express";
+ import express from "express";
 import http from "http";
 import mongoose from "mongoose";
 import cors from "cors";
@@ -13,11 +13,14 @@ dotenv.config();
 const app = express();
 const server = http.createServer(app);
 
-// Socket.io
-connectToSocket(server);
+// ✅ CORS (IMPORTANT)
+app.use(
+  cors({
+    origin: "https://doconnectfrontend.onrender.com",
+    credentials: true,
+  })
+);
 
-// Middlewares
-app.use(cors());
 app.use(express.json());
 
 // Routes
@@ -29,6 +32,9 @@ mongoose
   .connect(process.env.MONGO_URI)
   .then(() => console.log("✅ MongoDB connected"))
   .catch((err) => console.error("❌ Mongo error:", err));
+
+// Socket.io
+connectToSocket(server);
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () =>

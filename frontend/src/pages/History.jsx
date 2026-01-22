@@ -1,5 +1,6 @@
  import axios from "axios";
 import { useEffect, useState } from "react";
+import server from "../environment";
 
 const History = () => {
   const [meetings, setMeetings] = useState([]);
@@ -7,11 +8,14 @@ const History = () => {
   useEffect(() => {
     const fetchHistory = async () => {
       try {
-        const res = await axios.get("http://localhost:3000/api/meeting/history", {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        });
+        const res = await axios.get(
+          `${server.prod}/api/meeting/history`,
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
+        );
         setMeetings(res.data);
       } catch (err) {
         console.error(err);
